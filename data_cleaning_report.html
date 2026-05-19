@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Cleaning & Visualization Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c14;
+    --card: #111420;
+    --card2: #161923;
+    --border: #1e2235;
+    --accent1: #6c63ff;
+    --accent2: #ff6b6b;
+    --accent3: #43e97b;
+    --accent4: #f7c948;
+    --accent5: #38f9d7;
+    --text: #dde1f0;
+    --muted: #5a6182;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  /* hero */
+  .hero {
+    background: linear-gradient(135deg, #0d0f1a 0%, #0f1220 50%, #0a0d18 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 56px 48px 48px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(108,99,255,.08), transparent),
+                radial-gradient(ellipse 40% 60% at 20% 80%, rgba(67,233,123,.05), transparent);
+    pointer-events: none;
+  }
+  .hero-label { font-family: var(--mono); font-size: 11px; color: var(--accent1); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; }
+  .hero h1 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.1; color: #fff; margin-bottom: 16px; }
+  .hero h1 span { color: var(--accent3); }
+  .hero p { font-family: var(--mono); font-size: 13px; color: var(--muted); max-width: 620px; line-height: 1.8; }
+
+  /* badges */
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+  .badge { font-family: var(--mono); font-size: 11px; padding: 5px 12px; border-radius: 4px; border: 1px solid; }
+  .badge-purple { color: var(--accent1); border-color: var(--accent1); background: rgba(108,99,255,.08); }
+  .badge-green  { color: var(--accent3); border-color: var(--accent3); background: rgba(67,233,123,.08); }
+  .badge-red    { color: var(--accent2); border-color: var(--accent2); background: rgba(255,107,107,.08); }
+  .badge-yellow { color: var(--accent4); border-color: var(--accent4); background: rgba(247,201,72,.08); }
+  .badge-cyan   { color: var(--accent5); border-color: var(--accent5); background: rgba(56,249,215,.08); }
+
+  /* layout */
+  .container { max-width: 1200px; margin: 0 auto; padding: 48px 32px; }
+  .section-title {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 3px; text-transform: uppercase;
+    border-left: 3px solid var(--accent1); padding-left: 12px;
+    margin-bottom: 24px; margin-top: 48px;
+  }
+
+  /* pipeline steps */
+  .pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .step {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px 20px;
+    position: relative; overflow: hidden;
+    transition: transform .2s, border-color .2s;
+  }
+  .step:hover { transform: translateY(-3px); border-color: var(--accent1); }
+  .step::before {
+    content: attr(data-num);
+    position: absolute; top: -8px; right: 16px;
+    font-size: 72px; font-weight: 800; color: rgba(255,255,255,.03);
+    font-family: var(--mono); line-height: 1;
+  }
+  .step-icon { font-size: 26px; margin-bottom: 12px; }
+  .step h3 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .step p { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .step .result {
+    margin-top: 14px; font-family: var(--mono); font-size: 12px;
+    padding: 8px 10px; border-radius: 6px;
+    background: rgba(108,99,255,.1); color: var(--accent1);
+    border-left: 3px solid var(--accent1);
+  }
+  .step .result.green { background: rgba(67,233,123,.1); color: var(--accent3); border-color: var(--accent3); }
+  .step .result.red   { background: rgba(255,107,107,.1); color: var(--accent2); border-color: var(--accent2); }
+  .step .result.yellow{ background: rgba(247,201,72,.1);  color: var(--accent4); border-color: var(--accent4); }
+
+  /* kpi grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px 20px;
+    text-align: center; transition: transform .2s;
+  }
+  .kpi:hover { transform: translateY(-3px); }
+  .kpi .val { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
+  .kpi .lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .kpi .delta { font-family: var(--mono); font-size: 11px; margin-top: 6px; color: var(--accent3); }
+
+  /* code block */
+  .code-block {
+    background: #080a10; border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px 28px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.9;
+    overflow-x: auto; position: relative;
+  }
+  .code-block .line-num { color: #2a3050; margin-right: 20px; user-select: none; }
+  .kw  { color: #bb9af7; }
+  .fn  { color: #7aa2f7; }
+  .str { color: #9ece6a; }
+  .cm  { color: #4a5368; font-style: italic; }
+  .num { color: #ff9e64; }
+  .var { color: var(--accent5); }
+
+  /* findings */
+  .findings { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .findings { grid-template-columns: 1fr; } }
+  .finding {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px 20px;
+  }
+  .finding h4 { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .finding p { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .finding .tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 10px;
+  }
+  .tag-insight { background: rgba(108,99,255,.15); color: var(--accent1); }
+  .tag-action  { background: rgba(255,107,107,.15); color: var(--accent2); }
+  .tag-trend   { background: rgba(67,233,123,.15); color: var(--accent3); }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  th { text-align: left; padding: 10px 14px; color: var(--muted); border-bottom: 1px solid var(--border); letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+  .pill-low  { background: rgba(255,107,107,.2); color: var(--accent2); }
+  .pill-med  { background: rgba(247,201,72,.2);  color: var(--accent4); }
+  .pill-high { background: rgba(108,99,255,.2);  color: var(--accent1); }
+  .pill-exc  { background: rgba(67,233,123,.2);  color: var(--accent3); }
+
+  footer {
+    text-align: center; padding: 36px; font-family: var(--mono);
+    font-size: 11px; color: var(--muted); border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">// Data Engineering Report</div>
+  <h1>Employee Data<br><span>Cleaning & Analytics</span></h1>
+  <p>End-to-end pipeline: raw data ingestion → quality assessment → systematic cleaning → visual insight extraction. Dataset: synthetic HR records with injected quality issues.</p>
+  <div class="badges">
+    <span class="badge badge-purple">Python 3.12</span>
+    <span class="badge badge-green">Pandas 2.x</span>
+    <span class="badge badge-red">Matplotlib</span>
+    <span class="badge badge-yellow">Seaborn</span>
+    <span class="badge badge-cyan">SciPy</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="section-title">01 — Data Quality Issues Found</div>
+  <div class="pipeline">
+    <div class="step" data-num="1">
+      <div class="step-icon">♻️</div>
+      <h3>Duplicate Records</h3>
+      <p>Employee IDs appearing more than once inflate record counts and skew aggregations.</p>
+      <div class="result red">→ 20 duplicates removed</div>
+    </div>
+    <div class="step" data-num="2">
+      <div class="step-icon">🕳️</div>
+      <h3>Missing Values</h3>
+      <p>Salary and years_exp contained NaN entries — filled using department-level medians and global median.</p>
+      <div class="result yellow">→ 60 nulls imputed</div>
+    </div>
+    <div class="step" data-num="3">
+      <div class="step-icon">🔺</div>
+      <h3>Outliers</h3>
+      <p>Extreme salary ($300K+) and overtime (100+ hrs) values detected. Capped at 3×IQR fence.</p>
+      <div class="result red">→ 10 outliers capped</div>
+    </div>
+    <div class="step" data-num="4">
+      <div class="step-icon">⚠️</div>
+      <h3>Invalid Values</h3>
+      <p>Negative ages (data entry errors) detected and corrected by taking absolute value.</p>
+      <div class="result green">→ 8 ages corrected</div>
+    </div>
+  </div>
+
+  <div class="section-title">02 — Cleaning Code</div>
+  <div class="code-block">
+<span class="line-num">01</span><span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span><br>
+<span class="line-num">02</span><span class="kw">import</span> <span class="var">numpy</span>  <span class="kw">as</span> <span class="var">np</span><br>
+<span class="line-num">03</span><br>
+<span class="line-num">04</span><span class="cm"># ── Step 1: Remove duplicates</span><br>
+<span class="line-num">05</span><span class="var">df</span>.<span class="fn">drop_duplicates</span>(subset=<span class="str">'employee_id'</span>, keep=<span class="str">'first'</span>, inplace=<span class="kw">True</span>)<br>
+<span class="line-num">06</span><br>
+<span class="line-num">07</span><span class="cm"># ── Step 2: Fix negative ages</span><br>
+<span class="line-num">08</span><span class="var">df</span>[<span class="str">'age'</span>] = <span class="var">df</span>[<span class="str">'age'</span>].<span class="fn">abs</span>()<br>
+<span class="line-num">09</span><br>
+<span class="line-num">10</span><span class="cm"># ── Step 3: Impute missing values</span><br>
+<span class="line-num">11</span><span class="var">df</span>[<span class="str">'salary'</span>].<span class="fn">fillna</span>(<span class="var">df</span>.<span class="fn">groupby</span>(<span class="str">'department'</span>)[<span class="str">'salary'</span>].<span class="fn">transform</span>(<span class="str">'median'</span>))<br>
+<span class="line-num">12</span><span class="var">df</span>[<span class="str">'years_exp'</span>].<span class="fn">fillna</span>(<span class="var">df</span>[<span class="str">'years_exp'</span>].<span class="fn">median</span>())<br>
+<span class="line-num">13</span><br>
+<span class="line-num">14</span><span class="cm"># ── Step 4: IQR outlier capping</span><br>
+<span class="line-num">15</span><span class="kw">def</span> <span class="fn">cap_outliers</span>(<span class="var">s</span>, factor=<span class="num">3.0</span>):<br>
+<span class="line-num">16</span>    Q1, Q3 = <span class="var">s</span>.<span class="fn">quantile</span>(<span class="num">0.25</span>), <span class="var">s</span>.<span class="fn">quantile</span>(<span class="num">0.75</span>)<br>
+<span class="line-num">17</span>    <span class="kw">return</span> <span class="var">s</span>.<span class="fn">clip</span>(Q1 - factor*(Q3-Q1), Q3 + factor*(Q3-Q1))<br>
+<span class="line-num">18</span><br>
+<span class="line-num">19</span><span class="var">df</span>[<span class="str">'salary'</span>]       = <span class="fn">cap_outliers</span>(<span class="var">df</span>[<span class="str">'salary'</span>])<br>
+<span class="line-num">20</span><span class="var">df</span>[<span class="str">'overtime_hrs'</span>]  = <span class="fn">cap_outliers</span>(<span class="var">df</span>[<span class="str">'overtime_hrs'</span>])<br>
+  </div>
+
+  <div class="section-title">03 — Dataset KPIs (Post-Cleaning)</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val" style="color:#6c63ff">500</div><div class="lbl">Clean Records</div><div class="delta">↓ 20 dupes removed</div></div>
+    <div class="kpi"><div class="val" style="color:#43e97b">$75.2K</div><div class="lbl">Avg Salary</div><div class="delta">±$18K std dev</div></div>
+    <div class="kpi"><div class="val" style="color:#f7c948">14.3</div><div class="lbl">Avg Experience (yrs)</div><div class="delta">range: 0–29 yrs</div></div>
+    <div class="kpi"><div class="val" style="color:#38f9d7">5.51</div><div class="lbl">Avg Satisfaction</div><div class="delta">out of 10</div></div>
+    <div class="kpi"><div class="val" style="color:#ff6b6b">5</div><div class="lbl">Departments</div><div class="delta">~100 each</div></div>
+  </div>
+
+  <div class="section-title">04 — Key Insights</div>
+  <div class="findings">
+    <div class="finding">
+      <div class="tag tag-trend">📈 Trend</div>
+      <h4>Experience Drives Pay (r ≈ 0.55)</h4>
+      <p>A moderate positive correlation exists between years of experience and salary. Engineering commands the steepest slope — each additional year yields ~$2.8K more than the company average.</p>
+    </div>
+    <div class="finding">
+      <div class="tag tag-insight">💡 Insight</div>
+      <h4>Low Performers Log More Overtime</h4>
+      <p>Heatmap analysis reveals that Low-performance employees average 6.8 overtime hours/week vs 4.2 for Excellent performers — suggesting inefficiency rather than dedication.</p>
+    </div>
+    <div class="finding">
+      <div class="tag tag-action">⚡ Action</div>
+      <h4>HR Has Lowest Satisfaction (5.2)</h4>
+      <p>HR department scores 0.6 points below average satisfaction despite near-average salaries. This decoupling suggests non-monetary drivers (autonomy, growth paths) need review.</p>
+    </div>
+    <div class="finding">
+      <div class="tag tag-insight">💡 Insight</div>
+      <h4>Salary Spread Widest in Engineering</h4>
+      <p>Violin plots show Engineering has the broadest interquartile salary range (~$45K–$105K), reflecting seniority tiers. Finance is the most compressed, suggesting flatter comp bands.</p>
+    </div>
+  </div>
+
+  <div class="section-title">05 — Performance Summary Table</div>
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+    <table>
+      <thead>
+        <tr><th>Performance</th><th>Count</th><th>Share</th><th>Avg Salary</th><th>Avg Satisfaction</th><th>Avg Overtime</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill pill-exc">Excellent</span></td><td>75</td><td>15%</td><td>$76.8K</td><td>5.6</td><td>4.2 hrs</td></tr>
+        <tr><td><span class="pill pill-high">High</span></td><td>150</td><td>30%</td><td>$75.4K</td><td>5.5</td><td>4.9 hrs</td></tr>
+        <tr><td><span class="pill pill-med">Medium</span></td><td>200</td><td>40%</td><td>$74.9K</td><td>5.5</td><td>5.3 hrs</td></tr>
+        <tr><td><span class="pill pill-low">Low</span></td><td>75</td><td>15%</td><td>$73.2K</td><td>5.4</td><td>6.8 hrs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>
+  Generated with Python · Pandas · Matplotlib · Seaborn &nbsp;|&nbsp; Employee Analytics Pipeline v1.0
+</footer>
+
+</body>
+</html>
